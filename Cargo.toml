@@ -6,3 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+gray_matter = "0.2.6"
+serde = "1.0.189"
+log = "0.4.20"
+walkdir = "2.4.0"
+once_cell = "1.18.0"
+env_logger = "0.10.0"
+tempfile = "3.8.0"
+anyhow = "1.0.75"
+thiserror = "1.0.50"
+regex = "1.10.2"
