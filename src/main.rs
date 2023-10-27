@@ -1,5 +1,5 @@
 use clap::{ArgGroup, Parser};
-use log::debug;
+use log::{debug, info};
 use regex::Regex;
 use smelt::{find_attachments, find_markdown_files_with_tag, print_files, rsync_files};
 use std::path::PathBuf;
@@ -46,12 +46,16 @@ fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let cli = &Cli::parse();
-    debug!("{:?}", cli);
+    debug!("cli opts: {:?}", cli);
 
     let value_re_str = &cli.value;
     let value_re = Regex::new(value_re_str)?;
 
     let files = find_markdown_files_with_tag(&cli.src, &cli.key, &value_re);
+    info!(
+        "built filter for markdown files with front matter [{}: {}]",
+        cli.key, value_re_str
+    );
 
     if cli.include_attachment.is_none() {
         return Action::from_cli(cli)?.execute(files);
@@ -62,6 +66,10 @@ fn main() -> anyhow::Result<()> {
 
     let attachment_files = find_attachments(&cli.src, &attachment_dir_re);
     let files = files.chain(attachment_files);
+    info!(
+        "built filter for attachments with directory name matching [{}]",
+        attachment_dir_re_str
+    );
 
     Action::from_cli(cli)?.execute(files)
 }

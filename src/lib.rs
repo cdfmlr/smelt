@@ -1,6 +1,6 @@
 use gray_matter::engine::YAML;
 use gray_matter::Matter;
-use log::warn;
+use log::{debug, info, warn};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -133,11 +133,23 @@ pub fn rsync_files(
     let src_base_dir = src_base_dir.as_ref();
     let dst = dst.as_ref();
 
+    info!(
+        "rsync filtered files from {} to {}",
+        src_base_dir.display(),
+        dst.display()
+    );
+
     let tmp_dir = tempfile::tempdir()?;
     let tmp_dir = tmp_dir.path().to_owned();
     // to_owned() to drop tmp_dir after this function
     // drop(TempDir) do rm -rf tmp_dir by std::fs::remove_dir_all
 
+    info!(
+        "created temp dir {} to store filtered files",
+        tmp_dir.display()
+    );
+
+    let mut cnt = 0;
     for file in src_files {
         let s = file.path();
         let d = &tmp_dir.join(s.strip_prefix(src_base_dir)?);
@@ -153,13 +165,27 @@ pub fn rsync_files(
         }
 
         fs::hard_link(s, d)?;
+        debug!("hard linked {:?} to {:?}", s, d);
+        cnt += 1;
     }
+    info!(
+        "hard linked {} files from {} to {}",
+        cnt,
+        src_base_dir.display(),
+        tmp_dir.display()
+    );
 
     // add a trailing slash to src:
     //   rsync /path/to/src/ /path/to/dst
     // to make sure /path/to/src/{file} is synced to /path/to/dst/{file}
     // instead of /path/to/dst/src/{file}
     let rsync_src_dir = &dir_path_with_tail_slash(&tmp_dir);
+
+    info!(
+        "exec: rsync -av --delete {} {}",
+        rsync_src_dir,
+        dst.display()
+    );
 
     let status = std::process::Command::new("rsync")
         .arg("-av")
