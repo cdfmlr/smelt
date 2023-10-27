@@ -207,7 +207,8 @@ pub fn find_attachments<'a>(
     dir: impl AsRef<Path> + 'a,
     attachment_dir_re: &'a Regex,
 ) -> impl Iterator<Item = DirEntry> + 'a {
-    walkdir_iter(dir.as_ref()).filter(|e| e.file_type().is_file() && is_attachment(attachment_dir_re, e))
+    walkdir_iter(dir.as_ref())
+        .filter(|e| e.file_type().is_file() && is_attachment(attachment_dir_re, e))
 }
 
 /// is_attachment check all ancestors of the file
