@@ -5,15 +5,7 @@ use smelt::{find_attachments, find_markdown_files_with_tag, print_files, rsync_f
 use std::path::PathBuf;
 use walkdir::DirEntry;
 
-// smelt -k publish_to -v hello-world -i attachment --print SRC
-//  options:
-//    -k, --key: required
-//    -v, --value: required
-//    -i, --include-attachment: optional
-//  action:
-//    --print or --rsync-to DST
-
-// Reference (example):
+// clap reference (example):
 // - derive ArgGroup: https://github.com/clap-rs/clap/blob/v3.1.14/examples/tutorial_derive/README.md#argument-relations
 
 /// smelt find markdown files with specific tag,
@@ -29,7 +21,7 @@ struct Cli {
     /// key of the tag to find in the markdown files' front matter.
     #[arg(short, long)]
     key: String,
-    /// value of the key, in string type.
+    /// value of the key. A regex pattern indicating if the value matches.
     #[arg(short, long)]
     value: String,
     /// include attachment directories whose name matches the regex pattern,
@@ -56,20 +48,22 @@ fn main() -> anyhow::Result<()> {
     let cli = &Cli::parse();
     debug!("{:?}", cli);
 
-    let files = find_markdown_files_with_tag(&cli.src, &cli.key, &cli.value);
+    let value_re_str = &cli.value;
+    let value_re = Regex::new(value_re_str)?;
 
-    Action::from_cli(cli)?.execute(files)?;
+    let files = find_markdown_files_with_tag(&cli.src, &cli.key, &value_re);
 
     if cli.include_attachment.is_none() {
-        return Ok(());
+        return Action::from_cli(cli)?.execute(files);
     }
 
     let attachment_dir_re_str = cli.include_attachment.as_ref().unwrap();
     let attachment_dir_re = Regex::new(attachment_dir_re_str)?;
 
     let attachment_files = find_attachments(&cli.src, &attachment_dir_re);
+    let files = files.chain(attachment_files);
 
-    Action::from_cli(cli)?.execute(attachment_files)
+    Action::from_cli(cli)?.execute(files)
 }
 
 enum Action<'a> {

@@ -42,7 +42,7 @@ use CheckMarkdownFrontMatterError::*;
 fn contains_tag(
     markdown_file: &Path,
     key: &str,
-    value: &str,
+    value: &Regex,
 ) -> Result<bool, CheckMarkdownFrontMatterError> {
     let content = fs::read_to_string(markdown_file).or_else(|err| Err(ReadFileError(err)))?;
     let result = MATTER.parse(content.trim());
@@ -65,7 +65,8 @@ fn contains_tag(
         .unwrap()
         .as_string()
         .or_else(|err| Err(AsStringError(err)))?;
-    Ok(got_value == value)
+
+    Ok(value.is_match(&got_value))
 }
 
 /// find_markdown_files walks the given directory and returns
@@ -80,7 +81,7 @@ fn find_markdown_files(dir: &Path) -> impl Iterator<Item = DirEntry> {
 pub fn find_markdown_files_with_tag<'a, P: AsRef<Path>>(
     dir: P,
     key: &'a str,
-    value: &'a str,
+    value: &'a Regex,
 ) -> impl Iterator<Item = DirEntry> + 'a {
     // but why 'a is needed here?
     let dir = dir.as_ref();
@@ -286,10 +287,20 @@ mod tests {
         let file_wo_yaml = dir.join("missing_yaml.md");
         let file_not_exist = dir.join("not_exist.md");
 
-        assert!(contains_tag(&file_with_yaml, "publish_to", "hello-world").unwrap());
-        assert!(!contains_tag(&file_wo_yaml, "publish_to", "hello-world").unwrap());
+        assert!(contains_tag(
+            &file_with_yaml,
+            "publish_to",
+            &Regex::new("hello-world").unwrap()
+        )
+        .unwrap());
+        assert!(!contains_tag(
+            &file_wo_yaml,
+            "publish_to",
+            &Regex::new("hello-world").unwrap()
+        )
+        .unwrap());
 
-        assert!(contains_tag(&file_not_exist, "tags", "rust").is_err());
+        assert!(contains_tag(&file_not_exist, "tags", &Regex::new("rust").unwrap()).is_err());
     }
 
     #[test]
@@ -317,7 +328,8 @@ mod tests {
 
         let dir = Path::new("test_resc");
         let files: Vec<_> =
-            find_markdown_files_with_tag(&dir, "publish_to", "hello-world").collect();
+            find_markdown_files_with_tag(&dir, "publish_to", &Regex::new("hello-world").unwrap())
+                .collect();
 
         assert_eq!(files.len(), 1);
         assert!(files.iter().any(|e| e.path().ends_with("has_yaml.md")));
@@ -333,7 +345,8 @@ mod tests {
 
         debug!("dst_dir: {:?}", dst_dir);
 
-        let files = find_markdown_files_with_tag(&src_dir, "rsync_test", "expect copy");
+        let value_re = Regex::new("expect copy").unwrap();
+        let files = find_markdown_files_with_tag(&src_dir, "rsync_test", &value_re);
 
         let files: Vec<_> = files.collect();
         debug!("src files: {:?}", files);
