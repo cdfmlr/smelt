@@ -4,6 +4,8 @@
 based on their front-matter (the YAML metadata at the beginning of the
 Markdown files) and rsync (share) them from a directory tree to another.
 
+![Illustration to smelt: this tool filters in markdown documents with specific YAML front-matter, rsyncs them into another directory and then shares them via git-pushing to a remote git repo.](attachments/smelt-illustration.png)
+
 ## Synopsis
 
 ```shell
