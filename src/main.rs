@@ -11,7 +11,7 @@ use walkdir::DirEntry;
 /// smelt find markdown files with specific tag,
 /// and rsync them to destination directory.
 #[derive(Parser, Debug)]
-#[command(name = "smelt", version = "0.1.0", author = "CDFMLR")]
+#[command(name = "smelt", version = "0.1.1", author = "CDFMLR")]
 #[clap(group(
     ArgGroup::new("action")
         .required(true)

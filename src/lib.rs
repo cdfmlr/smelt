@@ -189,7 +189,7 @@ pub fn rsync_files(
 
     let status = std::process::Command::new("rsync")
         .arg("-av")
-        .arg("--delete")
+        // .arg("--delete")
         .arg(rsync_src_dir)
         .arg(dst)
         .status()?;
